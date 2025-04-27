@@ -11,12 +11,16 @@ screen_height = 480
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('釣魚遊戲')
 
-# 定義顏色
-WHITE = (255, 255, 255)
+# 載入背景圖片
+background_image = pygame.image.load("background.png") 
+background_image = pygame.transform.scale(background_image, (screen_width, screen_height))  # 調整背景圖片大小
 
 # 載入魚的圖片
-fish_image = pygame.image.load("fish1.jpg")
-fish_image = pygame.transform.scale(fish_image, (50,50))
+fish1_image = pygame.image.load("fish1.png")
+fish1_image = pygame.transform.scale(fish1_image, (50,50))
+
+fish2_image = pygame.image.load("fish2.png")
+fish2_image = pygame.transform.scale(fish2_image, (50,50))
 
 # 初始化攝像頭
 cap = cv2.VideoCapture(0)  # 使用預設攝像頭
@@ -42,17 +46,17 @@ while running:
     brightness = gray.mean()  # 計算影像亮度的平均值
 
     # 繪製背景
-    screen.fill(WHITE)
+    screen.blit(background_image, (0, 0))
 
     # 根據亮度決定魚的出現機率
     if brightness < 100:  # 當光線較暗時，顯示魚
         fish_x = random.randint(50, screen_width - 50)
         fish_y = random.randint(50, screen_height - 50)
-        screen.blit(fish_image, (fish_x, fish_y))  # 顯示魚圖片
+        screen.blit(fish1_image, (fish_x, fish_y))  # 顯示魚圖片
     else:  # 當光線較強時，顯示較少的魚
         fish_x = random.randint(50, screen_width - 50)
         fish_y = random.randint(50, screen_height - 50)
-        screen.blit(fish_image, (fish_x, fish_y))  # 顯示魚圖片
+        screen.blit(fish2_image, (fish_x, fish_y))  # 顯示魚圖片
 
     # 顯示目前的亮度值
     font = pygame.font.SysFont(None, 30)
