@@ -1,32 +1,72 @@
-import sys
-
+import cv2
 import pygame
-from pygame.locals import QUIT
+import random
 
-# 初始化
+# 初始化 Pygame
 pygame.init()
-# 建立 window 視窗畫布，大小為 800x600
-window_surface = pygame.display.set_mode((800, 600))
-# 設置視窗標題為 Hello World:)
-pygame.display.set_caption('Hello World:)')
-# 清除畫面並填滿背景色
-window_surface.fill((255, 255, 255))
 
-# 宣告 font 文字物件
-head_font = pygame.font.SysFont(None, 60)
-# 渲染方法會回傳 surface 物件
-text_surface = head_font.render('Hello World!', True, (0, 0, 0))
-# blit 用來把其他元素渲染到另外一個 surface 上，這邊是 window 視窗
-window_surface.blit(text_surface, (10, 10))
+# 設定遊戲視窗大小
+screen_width = 640
+screen_height = 480
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption('釣魚遊戲')
 
-# 更新畫面，等所有操作完成後一次更新（若沒更新，則元素不會出現）
-pygame.display.update()
+# 定義顏色
+WHITE = (255, 255, 255)
 
-# 事件迴圈監聽事件，進行事件處理
-while True:
-    # 迭代整個事件迴圈，若有符合事件則對應處理
+# 載入魚的圖片
+fish_image = pygame.image.load("fish1.jpg")
+fish_image = pygame.transform.scale(fish_image, (50,50))
+
+# 初始化攝像頭
+cap = cv2.VideoCapture(0)  # 使用預設攝像頭
+if not cap.isOpened():
+    print("無法打開攝像頭")
+    exit()
+
+# 設定魚的位置
+fish_x = random.randint(50, screen_width - 50)
+fish_y = random.randint(50, screen_height - 50)
+
+
+# 遊戲主循環
+running = True
+while running:
+    ret, frame = cap.read()
+    if not ret:
+        print("無法讀取攝像頭影像")
+        break
+
+    # 將影像轉為灰階來計算亮度
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    brightness = gray.mean()  # 計算影像亮度的平均值
+
+    # 繪製背景
+    screen.fill(WHITE)
+
+    # 根據亮度決定魚的出現機率
+    if brightness < 100:  # 當光線較暗時，顯示魚
+        fish_x = random.randint(50, screen_width - 50)
+        fish_y = random.randint(50, screen_height - 50)
+        screen.blit(fish_image, (fish_x, fish_y))  # 顯示魚圖片
+    else:  # 當光線較強時，顯示較少的魚
+        fish_x = random.randint(50, screen_width - 50)
+        fish_y = random.randint(50, screen_height - 50)
+        screen.blit(fish_image, (fish_x, fish_y))  # 顯示魚圖片
+
+    # 顯示目前的亮度值
+    font = pygame.font.SysFont(None, 30)
+    text = font.render(f"亮度: {int(brightness)}", True, (0, 0, 0))
+    screen.blit(text, (10, 10))
+
+    # 更新顯示
+    pygame.display.update()
+
+    # 處理退出事件
     for event in pygame.event.get():
-        # 當使用者結束視窗，程式也結束
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
+        if event.type == pygame.QUIT:
+            running = False
+
+# 清理資源
+cap.release()
+pygame.quit()
