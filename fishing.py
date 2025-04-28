@@ -1,6 +1,17 @@
 import cv2
 import pygame
 import random
+import sounddevice as sd
+import numpy as np
+import math
+
+def get_volume():
+    duration = 0.1
+    sample_rate = 44100
+    recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1)
+    sd.wait()
+    volume_norm = np.linalg.norm(recording) * 10
+    return volume_norm
 
 # 初始化 Pygame
 pygame.init()
@@ -26,13 +37,23 @@ for i in range(1, 5):
 
 # 載入垃圾的圖片
 trash_images = []
-for i in range(1, 4): 
+for i in range(1, 2): 
     img = pygame.image.load(f"trash{i}.png")
     img = pygame.transform.scale(img, (50, 50))
     trash_images.append(img)
 
-fishing_rod = pygame.image.load("fishingRod.png")
-fishing_rod = pygame.transform.scale(fishing_rod, (50, 50))
+# 載入魚桿的圖片
+hook = pygame.image.load("hook3.png")
+hook = pygame.transform.scale(hook, (50, 90))
+
+hook_x = screen.get_width() // 2
+hook_y = 30
+
+rod_tip_x = hook_x
+rod_tip_y = 0
+
+hook_speed = 0.1
+hook_direction = 1 #1向右-1向左
 
 # 初始化攝像頭
 cap = cv2.VideoCapture(0)  # 使用預設攝像頭
@@ -66,10 +87,19 @@ for _ in range(4):
     trash_pos.append(trash)
 
 score = 0
+hook_returning = False
+last_volume_time = 0
+volume = 0
 # 遊戲主循環
 clock = pygame.time.Clock()
 running = True
 while running:
+    now = pygame.time.get_ticks()
+    if now - last_volume_time > 500:
+        # volume = get_volume()
+        volume = 20
+        last_volume_time = now
+
     ret, frame = cap.read()
     if not ret:
         print("無法讀取攝像頭影像")
@@ -81,8 +111,6 @@ while running:
 
     # 繪製背景
     screen.blit(background_image, (0, 0))
-
-    screen.blit(fishing_rod, (screen.get_width() - fishing_rod.get_width() - 10, 10))
 
     # 更新魚的位置
     for fish in fish_pos:
@@ -118,6 +146,34 @@ while running:
         #限制最大速度
         trash["speed_x"] = max(min(trash["speed_x"], 2), -2)
         trash["speed_y"] = max(min(trash["speed_y"], 2), -2)
+    
+    #魚線擺動
+    pygame.draw.line(screen, (0, 0, 0), (rod_tip_x, rod_tip_y), (hook_x, hook_y), 1)
+    screen.blit(hook, ((hook_x - hook.get_width() // 2 - 10), hook_y))
+    hook_x += hook_speed * hook_direction
+
+    # 如果碰到左右邊界，就反方向
+    if hook_x >= screen.get_width() - 200 or hook_x <= 200:
+        hook_direction *= -1
+
+    #音量控制魚鉤向下
+    if not hook_returning:  # 如果不是正在收線
+        if volume > 10:
+            hook_y += max(0, (volume - 10) * 3)  # 大聲才往下掉
+        if hook_y > screen_height - 50:
+            hook_y = screen_height - 50
+            hook_returning = True  # 到達底部，開始收線
+    else:
+        hook_y -= 10  # 收線的速度
+        if hook_y <= 30:  # 回到起點
+            hook_y = 30
+            hook_returning = False  # 收線完成
+
+
+    #防止鉤子超出畫面
+    if hook_y > screen_height - 50:
+        hook_y = screen_height -50
+
 
     # 根據亮度決定魚的出現機率
     if brightness < 100:
@@ -151,8 +207,26 @@ while running:
 
     # 顯示目前的亮度值
     font = pygame.font.SysFont(None, 30)
-    text = font.render(f"亮度: {int(brightness)}", True, (0, 0, 0))
+    text = font.render(f"light:{int(brightness)}", True, (0, 0, 0))
     screen.blit(text, (30, 40))
+
+    #碰到魚
+    for fish in fish_pos[:]:
+        fish_rect = pygame.Rect(fish["x"], fish["y"], 50, 50)
+        hook_rect = pygame.Rect(hook_x - 25, hook_y, 50, 70)
+        if hook_rect.colliderect(fish_rect):
+            fish["x"] = random.randint(0, max_x)
+            fish["y"] = random.randint(60, max_y)
+            score += 10
+            hook_returning = True
+    # 碰到垃圾
+    for trash in trash_pos[:]:
+        trash_rect = pygame.Rect(trash["x"], trash["y"], 50, 50)
+        if hook_rect.colliderect(trash_rect):
+            trash["x"] = random.randint(0, max_x)
+            trash["y"] = random.randint(60, max_y)
+            score -= 5
+            hook_returning = True
 
     #分數
     text2 = font.render(f"score: {int(score)}", True, (0, 0, 0))
