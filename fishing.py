@@ -22,6 +22,9 @@ fish1_image = pygame.transform.scale(fish1_image, (50,50))
 fish2_image = pygame.image.load("fish2.png")
 fish2_image = pygame.transform.scale(fish2_image, (50,50))
 
+fishing_rod = pygame.image.load("fishingRod.png")
+fishing_rod = pygame.transform.scale(fishing_rod, (50, 50))
+
 # 初始化攝像頭
 cap = cv2.VideoCapture(0)  # 使用預設攝像頭
 if not cap.isOpened():
@@ -32,7 +35,7 @@ if not cap.isOpened():
 fish_x = random.randint(50, screen_width - 50)
 fish_y = random.randint(50, screen_height - 50)
 
-
+score = 0
 # 遊戲主循環
 running = True
 while running:
@@ -48,6 +51,8 @@ while running:
     # 繪製背景
     screen.blit(background_image, (0, 0))
 
+    screen.blit(fishing_rod, (screen.get_width() - fishing_rod.get_width() - 10, 10))
+
     # 根據亮度決定魚的出現機率
     if brightness < 100:  # 當光線較暗時，顯示魚
         fish_x = random.randint(50, screen_width - 50)
@@ -62,6 +67,9 @@ while running:
     font = pygame.font.SysFont(None, 30)
     text = font.render(f"亮度: {int(brightness)}", True, (0, 0, 0))
     screen.blit(text, (10, 10))
+
+    text2 = font.render("分數: {score}", True, (0, 0, 0))
+    screen.blit(text2, (15, 10))
 
     # 更新顯示
     pygame.display.update()
