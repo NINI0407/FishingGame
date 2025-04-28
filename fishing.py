@@ -31,9 +31,12 @@ if not cap.isOpened():
 # 設定魚的位置
 fish_x = random.randint(50, screen_width - 50)
 fish_y = random.randint(50, screen_height - 50)
+fish_speed_x = random.choice([-1, 1]) * random.uniform(0.5, 2)
+fish_speed_y = random.choice([-1, 1]) * random.uniform(0.5, 2)
 
 
 # 遊戲主循環
+clock = pygame.time.Clock()
 running = True
 while running:
     ret, frame = cap.read()
@@ -48,15 +51,28 @@ while running:
     # 繪製背景
     screen.blit(background_image, (0, 0))
 
+    # 更新魚的位置
+    fish_x += fish_speed_x
+    fish_y += fish_speed_y
+
+    # 如果魚碰到邊界，讓牠反向游
+    if fish_x <= 0 or fish_x >= screen_width - 50:
+        fish_speed_x *= -1
+    if fish_y <= 0 or fish_y >= screen_width - 50:
+        fish_speed_y *= -1
+
+    #有小機率讓魚的方向稍微改變，增加自然感
+    if random.random() < 0.01:
+        fish_speed_x += random.uniform(-0.5, 0.5)
+        fish_speed_y += random.uniform(-0.5, 0.5)
+
+    #限制最大速度
+    fish_speed_x = max(min(fish_speed_x, 2), -2)
+    fish_speed_y = max(min(fish_speed_y, 2), -2)
+
     # 根據亮度決定魚的出現機率
-    if brightness < 100:  # 當光線較暗時，顯示魚
-        fish_x = random.randint(50, screen_width - 50)
-        fish_y = random.randint(50, screen_height - 50)
-        screen.blit(fish1_image, (fish_x, fish_y))  # 顯示魚圖片
-    else:  # 當光線較強時，顯示較少的魚
-        fish_x = random.randint(50, screen_width - 50)
-        fish_y = random.randint(50, screen_height - 50)
-        screen.blit(fish2_image, (fish_x, fish_y))  # 顯示魚圖片
+    if brightness < 150:
+        screen.blit(fish1_image, (fish_x, fish_y))
 
     # 顯示目前的亮度值
     font = pygame.font.SysFont(None, 30)
@@ -65,6 +81,9 @@ while running:
 
     # 更新顯示
     pygame.display.update()
+
+    # 控制FPS，讓魚游得平順（比如每秒30幀）
+    clock.tick(30)
 
     # 處理退出事件
     for event in pygame.event.get():
