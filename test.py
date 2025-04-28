@@ -60,8 +60,8 @@ title_text = font.render('Go Fishing', True, (255, 255, 255))  # 遊戲名稱
 start_text = font_small.render('START!', True, (255, 255, 255))  # 開始遊戲提示
 quit_text = font_small.render('EXIT', True, (255, 255, 255))  # 退出遊戲提示
 
-hook_speed = 0.1
-hook_direction = 1 #1向右-1向左
+# hook_speed = 0.1
+# hook_direction = 1 #1向右-1向左
 
 score = 0
 # 遊戲主循環
